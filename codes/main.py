@@ -282,12 +282,13 @@ def live(opt):
         while True:
             # _, frame = cap.read()
             message = server.receive()
-            frame = message.image
+            image = message.image
             if frame.any():
-                resize = cv2.resize(frame, (256, 256))
-                cv2.imshow("LR image", resize)
+                print(image.shape)
+                # image = cv2.resize(image, (256, 256))
+                cv2.imshow("LR image", image)
                 norm_image = cv2.normalize(
-                    resize, None, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
+                    image, None, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
                 tmp_torch = torch.from_numpy(norm_image[None, :, :, :]).cuda()
                 hr_image = model.infer_live(tmp_torch)
                 cv2.imshow("HR image", hr_image[0])
