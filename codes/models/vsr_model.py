@@ -80,16 +80,13 @@ class VSRModel(BaseModel):
         # ------------ prepare data ------------ #
         lr_data, gt_data = data['lr'], data['gt']
 
-
         # ------------ clear optim ------------ #
         self.net_G.train()
         self.optim_G.zero_grad()
 
-
         # ------------ forward G ------------ #
         net_G_output_dict = self.net_G.forward_sequence(lr_data)
         hr_data = net_G_output_dict['hr_data']
-
 
         # ------------ optimize G ------------ #
         loss_G = 0
@@ -136,6 +133,27 @@ class VSRModel(BaseModel):
         # infer
         hr_seq = self.net_G.infer_sequence(lr_data, self.device)
         hr_seq = hr_seq[n_pad_front:, ...]
+
+        return hr_seq
+
+    def infer_live(self, lr_data):
+        """ Function of inference
+
+            Parameters:
+                :param lr_data: a rgb video sequence with shape thwc
+                :return: a rgb video sequence with type np.uint8 and shape thwc
+        """
+
+        # canonicalize
+        lr_data = data_utils.canonicalize(lr_data)  # to torch.FloatTensor
+        lr_data = lr_data.permute(0, 3, 1, 2)  # tchw
+
+        # temporal padding
+        lr_data, n_pad_front = self.pad_sequence(lr_data)
+
+        # infer
+        hr_seq = self.net_G.infer_sequence(lr_data, self.device)
+        # hr_seq = hr_seq[n_pad_front:, ...]
 
         return hr_seq
 
