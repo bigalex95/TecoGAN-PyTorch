@@ -16,6 +16,7 @@ from utils import base_utils, data_utils
 
 import cv2
 from imutils.video import FPS
+import imagiz
 
 
 def train(opt):
@@ -229,7 +230,7 @@ def profile(opt, lr_size, test_speed=False):
 
     logger.info('-' * 40)
     logger.info('Super-resolute data from {}x{}x{} to {}x{}x{}'.format(
-        *lr_size, lr_size[0], lr_size[1]*scale, lr_size[2]*scale))
+                lr_size, lr_size[0], lr_size[1]*scale, lr_size[2]*scale))
     logger.info('Parameters (x10^6): {:.3f}'.format(params/1e6))
     logger.info('FLOPs (x10^9): {:.3f}'.format(gflops))
     logger.info('-' * 40)
@@ -254,7 +255,9 @@ def profile(opt, lr_size, test_speed=False):
 def live(opt):
     cv2.namedWindow("LR image", cv2.WINDOW_NORMAL)
     cv2.namedWindow("HR image", cv2.WINDOW_NORMAL)
-    cap = cv2.VideoCapture(0)
+    # cap = cv2.VideoCapture(0)
+    server = imagiz.TCP_Server(port=5550)
+    server.start()
 
     # logging
     logger = base_utils.get_logger('base')
@@ -277,18 +280,21 @@ def live(opt):
         model = define_model(opt)
         fps = FPS().start()
         while True:
-            _, frame = cap.read()
-            resize = cv2.resize(frame, (256, 256))
-            cv2.imshow("LR image", resize)
-            norm_image = cv2.normalize(
-                resize, None, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
-            tmp_torch = torch.from_numpy(norm_image[None, :, :, :]).cuda()
-            hr_image = model.infer_live(tmp_torch)
-            cv2.imshow("HR image", hr_image[0])
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                cv2.destroyAllWindows()
-                break
-            fps.update()
+            # _, frame = cap.read()
+            message = server.receive()
+            frame = message.image
+            if frame.any():
+                resize = cv2.resize(frame, (256, 256))
+                cv2.imshow("LR image", resize)
+                norm_image = cv2.normalize(
+                    resize, None, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
+                tmp_torch = torch.from_numpy(norm_image[None, :, :, :]).cuda()
+                hr_image = model.infer_live(tmp_torch)
+                cv2.imshow("HR image", hr_image[0])
+                if cv2.waitKey(1) & 0xFF == ord('q'):
+                    cv2.destroyAllWindows()
+                    break
+                fps.update()
     fps.stop()
     print("[INFO] elasped time: {:.2f}".format(fps.elapsed()))
     print("[INFO] approx. FPS: {:.2f}".format(fps.fps()))
