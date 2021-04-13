@@ -253,8 +253,8 @@ def profile(opt, lr_size, test_speed=False):
 
 
 def live(opt):
-    # cv2.namedWindow("LR image", cv2.WINDOW_NORMAL)
-    # cv2.namedWindow("HR image", cv2.WINDOW_NORMAL)
+    cv2.namedWindow("LR image", cv2.WINDOW_NORMAL)
+    cv2.namedWindow("HR image", cv2.WINDOW_NORMAL)
     # cap = cv2.VideoCapture(0)
     server = imagiz.TCP_Server(port=5550)
     server.start()
