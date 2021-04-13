@@ -283,7 +283,7 @@ def live(opt):
             # _, frame = cap.read()
             message = server.receive()
             image = message.image
-            if frame.any():
+            if image.any():
                 print(image.shape)
                 # image = cv2.resize(image, (256, 256))
                 cv2.imshow("LR image", image)
